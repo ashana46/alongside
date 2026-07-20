@@ -1,0 +1,28 @@
+{
+  "expo": {
+    "name": "Alongside",
+    "slug": "alongside",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "alongside",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.alongside.app"
+    },
+    "android": {
+      "package": "com.alongside.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#F4EFF7"
+      }
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

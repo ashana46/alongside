@@ -1,0 +1,10 @@
+name = "alongside-proxy"
+main = "src/index.ts"
+compatibility_date = "2024-11-01"
+
+# Set ANTHROPIC_API_KEY via `wrangler secret put ANTHROPIC_API_KEY`
+# For local dev, put it in worker/.dev.vars
+
+[vars]
+MODEL = "claude-haiku-4-5-20251001"
+MAX_STEPS = "8"
