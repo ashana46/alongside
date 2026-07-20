@@ -52,3 +52,26 @@ export async function generateSteps(taskTitle: string): Promise<GenerateResult> 
     throw err;
   }
 }
+
+export async function splitStepAI(
+  taskTitle: string,
+  stepText: string,
+): Promise<string[]> {
+  const start = Date.now();
+  log('split.proxy.request');
+  const res = await fetch(`${WORKER_URL}/split`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ taskTitle, stepText }),
+  });
+  log('split.proxy.response', {
+    status: res.status,
+    latency_ms: Date.now() - start,
+  });
+  if (!res.ok) throw new Error(`split ${res.status}`);
+  const data = (await res.json()) as { steps?: string[] };
+  if (!Array.isArray(data.steps) || data.steps.length === 0) {
+    throw new Error('split returned no steps');
+  }
+  return data.steps;
+}
