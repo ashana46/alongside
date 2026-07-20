@@ -1,0 +1,16 @@
+{
+  "name": "alongside",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "app",
+    "worker"
+  ],
+  "scripts": {
+    "app": "npm --workspace app run start",
+    "app:ios": "npm --workspace app run ios",
+    "app:android": "npm --workspace app run android",
+    "worker:dev": "npm --workspace worker run dev",
+    "worker:deploy": "npm --workspace worker run deploy"
+  }
+}
