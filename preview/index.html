@@ -423,12 +423,20 @@
     position: relative;
   }
   .companion.breathe { animation: breathe 3.6s ease-in-out infinite; }
+  .companion.jump { animation: jump 900ms cubic-bezier(.22,1,.36,1); }
   @keyframes breathe {
     0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.04); }
+    50% { transform: scale(1.03); }
+  }
+  @keyframes jump {
+    0%   { transform: translateY(0); }
+    30%  { transform: translateY(-26px); }
+    55%  { transform: translateY(0); }
+    75%  { transform: translateY(-10px); }
+    100% { transform: translateY(0); }
   }
   @media (prefers-reduced-motion: reduce) {
-    .companion.breathe { animation: none; }
+    .companion.breathe, .companion.jump { animation: none; }
   }
 
   /* Confetti */
@@ -714,29 +722,64 @@
 
 <script>
   const CELEB = ['#9B87C4','#7D6BA8','#F5B58A','#FADFC7','#C9BBE0'];
-  const COMPANION_SVG = (mood /* 'idle' | 'celebrating' */) => `
+  const SKIN = '#EBBFA0';
+  const HAIR = '#6B4A2E';
+  const SHIRT = '#9B87C4';
+  const SHIRT_SHADE = '#7D6BA8';
+  const INK = '#2E2540';
+
+  // Warm brown-haired companion. Arms are separate <g> elements that rotate
+  // around the shoulder point (via transform) so celebrating raises them to a V.
+  const COMPANION_SVG = (mood /* 'idle' | 'celebrating' */) => {
+    const celebrating = mood === 'celebrating';
+    const armLeftRot  = celebrating ? -150 : -20;
+    const armRightRot = celebrating ?  150 :  20;
+    const eyes = celebrating
+      ? `<path d="M69 58 Q73 54 77 58" stroke="${INK}" stroke-width="2" stroke-linecap="round" fill="none"/>
+         <path d="M83 58 Q87 54 91 58" stroke="${INK}" stroke-width="2" stroke-linecap="round" fill="none"/>`
+      : `<circle cx="72" cy="58" r="2.4" fill="${INK}"/>
+         <circle cx="88" cy="58" r="2.4" fill="${INK}"/>`;
+    const mouth = celebrating
+      ? `<path d="M72 70 Q80 80 88 70 Q80 74 72 70 Z" fill="${INK}" opacity="0.85"/>`
+      : `<path d="M74 70 Q80 74 86 70" stroke="${INK}" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.85"/>`;
+    // arms — rotated around their shoulder anchor
+    const arm = (shoulderX, shoulderY, rot, mirror) => {
+      const d1 = mirror
+        ? `M0 0 Q12 4 14 18`
+        : `M0 0 Q-12 4 -14 18`;
+      const d2 = mirror
+        ? `M8 16 Q14 30 14 42`
+        : `M-8 16 Q-14 30 -14 42`;
+      const handX = mirror ? 14 : -14;
+      return `<g transform="translate(${shoulderX} ${shoulderY}) rotate(${rot})">
+        <path d="${d1}" stroke="${SHIRT_SHADE}" stroke-width="12" stroke-linecap="round" fill="none"/>
+        <path d="${d2}" stroke="${SKIN}" stroke-width="8" stroke-linecap="round" fill="none"/>
+        <circle cx="${handX}" cy="44" r="5" fill="${SKIN}"/>
+      </g>`;
+    };
+    return `
     <svg width="120" height="120" viewBox="0 0 160 160">
-      <ellipse cx="80" cy="142" rx="40" ry="5" fill="#C9BBE0" opacity="0.5"/>
-      <g>
-        <path d="M40 78 Q40 40 80 40 Q120 40 120 78 L120 118 Q120 130 108 130 L52 130 Q40 130 40 118 Z" fill="#9B87C4"/>
-        <circle cx="68" cy="78" r="4" fill="#2E2540"/>
-        <circle cx="92" cy="78" r="4" fill="#2E2540"/>
-        ${mood === 'celebrating'
-          ? '<path d="M66 94 Q80 108 94 94" stroke="#2E2540" stroke-width="3" stroke-linecap="round" fill="none"/>'
-          : '<path d="M68 96 Q80 102 92 96" stroke="#2E2540" stroke-width="3" stroke-linecap="round" fill="none" opacity="0.85"/>'}
-        <circle cx="62" cy="90" r="5" fill="#FADFC7" opacity="0.6"/>
-        <circle cx="98" cy="90" r="5" fill="#FADFC7" opacity="0.6"/>
-        <!-- arms -->
-        <path d="${mood === 'celebrating'
-          ? 'M46 82 Q30 40 26 20'
-          : 'M46 82 Q36 106 38 128'
-        }" stroke="#7D6BA8" stroke-width="10" stroke-linecap="round" fill="none"/>
-        <path d="${mood === 'celebrating'
-          ? 'M114 82 Q130 40 134 20'
-          : 'M114 82 Q124 106 122 128'
-        }" stroke="#7D6BA8" stroke-width="10" stroke-linecap="round" fill="none"/>
-      </g>
+      <ellipse cx="80" cy="148" rx="38" ry="4" fill="#C9BBE0" opacity="0.45"/>
+      <!-- torso -->
+      <path d="M50 100 Q50 88 62 86 L98 86 Q110 88 110 100 L112 140 Q112 148 104 148 L56 148 Q48 148 48 140 Z" fill="${SHIRT}"/>
+      <path d="M80 86 L80 148" stroke="${SHIRT_SHADE}" stroke-width="1" opacity="0.18"/>
+      <!-- neck -->
+      <path d="M74 82 L86 82 L86 92 L74 92 Z" fill="${SKIN}"/>
+      <!-- hair back -->
+      <path d="M52 58 Q52 34 80 32 Q108 34 108 58 L110 92 Q104 90 100 92 L100 74 Q80 82 60 74 L60 92 Q56 90 50 92 Z" fill="${HAIR}"/>
+      <!-- face -->
+      <circle cx="80" cy="60" r="22" fill="${SKIN}"/>
+      <!-- hair fringe -->
+      <path d="M58 54 Q68 40 82 42 Q98 42 104 56 Q98 50 88 52 Q78 56 66 60 Q60 60 58 54 Z" fill="${HAIR}"/>
+      <!-- cheeks -->
+      <circle cx="70" cy="66" r="3.5" fill="#F2A088" opacity="0.55"/>
+      <circle cx="90" cy="66" r="3.5" fill="#F2A088" opacity="0.55"/>
+      ${eyes}
+      ${mouth}
+      ${arm(58, 94, armLeftRot, false)}
+      ${arm(102, 94, armRightRot, true)}
     </svg>`;
+  };
 
   // Populate companions
   const sizes = { 'companion-home': 90, 'companion-focus': 150, 'companion-checkin': 150, 'companion-rhythms': 100 };
@@ -816,6 +859,12 @@
     const svg = el.querySelector('svg');
     const size = { 'companion-focus': 150, 'companion-home': 90, 'companion-rhythms': 100 }[id] ?? 120;
     if (svg) { svg.setAttribute('width', size); svg.setAttribute('height', size); }
+    if (mood === 'celebrating') {
+      el.classList.remove('jump');
+      void el.offsetWidth; // restart animation
+      el.classList.add('jump');
+      setTimeout(() => el.classList.remove('jump'), 950);
+    }
   }
 
   function fireConfetti(big) {
