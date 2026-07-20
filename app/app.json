@@ -19,7 +19,13 @@
     },
     "plugins": [
       "expo-router",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-notifications",
+        {
+          "color": "#7D6BA8"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

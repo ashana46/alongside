@@ -1,6 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useStore } from '../../src/store';
@@ -8,6 +8,8 @@ import { colors, radii, spacing, type } from '../../src/theme';
 import { Companion, CompanionMood } from '../../src/components/Companion';
 import { Confetti } from '../../src/components/Confetti';
 import { log } from '../../src/log';
+import { splitStepAI } from '../../src/steps';
+import { cancelScheduled, scheduleIdleCheckIn } from '../../src/notifications';
 
 const IDLE_MS = 10 * 60 * 1000; // 10 minutes
 const PHASE_SIZE = 4;
@@ -22,26 +24,43 @@ export default function FocusScreen() {
   const skipStep = useStore((s) => s.skipStep);
   const splitStep = useStore((s) => s.splitStep);
   const parkTask = useStore((s) => s.parkTask);
+  const quietStart = useStore((s) => s.quietStart);
+  const quietEnd = useStore((s) => s.quietEnd);
 
   const [confettiFire, setConfettiFire] = useState(0);
   const [bigConfetti, setBigConfetti] = useState(false);
   const [mood, setMood] = useState<CompanionMood>('working');
+  const [splitting, setSplitting] = useState(false);
   const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scheduledNotifId = useRef<string | null>(null);
 
-  const resetIdle = () => {
+  const resetIdle = async () => {
     if (idleTimer.current) clearTimeout(idleTimer.current);
     setMood('working');
     idleTimer.current = setTimeout(() => {
       setMood('checking-in');
       log('idle.checkin.shown');
     }, IDLE_MS);
+    // also arm a background local notification for the same 10 minutes
+    await cancelScheduled(scheduledNotifId.current);
+    scheduledNotifId.current = null;
+    if (id) {
+      scheduledNotifId.current = await scheduleIdleCheckIn({
+        taskId: id,
+        quietStart,
+        quietEnd,
+      });
+    }
   };
 
   useEffect(() => {
     resetIdle();
     return () => {
       if (idleTimer.current) clearTimeout(idleTimer.current);
+      cancelScheduled(scheduledNotifId.current);
+      scheduledNotifId.current = null;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const currentStep = useMemo(
@@ -54,7 +73,6 @@ export default function FocusScreen() {
 
   const currentPhaseSteps = useMemo(() => {
     if (!task) return [];
-    // group in phases of PHASE_SIZE — dots for the current phase
     const idx = task.steps.findIndex((s) => s.status === 'pending');
     const anchor = idx < 0 ? task.steps.length - 1 : idx;
     const phase = Math.floor(anchor / PHASE_SIZE);
@@ -81,12 +99,13 @@ export default function FocusScreen() {
     setConfettiFire((n) => n + 1);
     log('celebration.played');
     completeStep(task.id, currentStep.id);
-    // detect if this was the last step
     const remainingAfter = task.steps.filter(
       (s) => s.id !== currentStep.id && s.status === 'pending',
     ).length;
     if (remainingAfter === 0) {
       setBigConfetti(true);
+      cancelScheduled(scheduledNotifId.current);
+      scheduledNotifId.current = null;
       setTimeout(() => {
         setBigConfetti(false);
         router.back();
@@ -103,19 +122,30 @@ export default function FocusScreen() {
     resetIdle();
   };
 
-  const onSplit = () => {
-    if (!currentStep) return;
-    // v0: naive split — halves the current step into two smaller placeholders.
-    // A future iteration will call the AI for a real breakdown.
-    splitStep(task.id, currentStep.id, [
-      `part 1: start "${currentStep.text.toLowerCase()}"`,
-      `part 2: finish "${currentStep.text.toLowerCase()}"`,
-    ]);
-    resetIdle();
+  const onSplit = async () => {
+    if (!currentStep || splitting) return;
+    setSplitting(true);
+    try {
+      const pieces = await splitStepAI(task.title, currentStep.text);
+      splitStep(task.id, currentStep.id, pieces);
+      log('split.success');
+    } catch (e) {
+      log('split.fail', { error: String(e) });
+      // Fallback: keep the same rough split so the user isn't stuck.
+      splitStep(task.id, currentStep.id, [
+        `start "${currentStep.text.toLowerCase()}"`,
+        `finish "${currentStep.text.toLowerCase()}"`,
+      ]);
+    } finally {
+      setSplitting(false);
+      resetIdle();
+    }
   };
 
   const onBack = () => {
     parkTask(task.id);
+    cancelScheduled(scheduledNotifId.current);
+    scheduledNotifId.current = null;
     router.back();
   };
 
@@ -140,7 +170,6 @@ export default function FocusScreen() {
       </View>
 
       <View style={{ paddingHorizontal: spacing.lg }}>
-        {/* overall bar */}
         <View
           style={{
             height: 6,
@@ -199,7 +228,6 @@ export default function FocusScreen() {
           <Text style={{ ...type.title, color: colors.ink }}>all done — beautifully.</Text>
         )}
 
-        {/* phase dots */}
         <View style={{ flexDirection: 'row', marginTop: spacing.lg, gap: 8 }}>
           {currentPhaseSteps.map((s) => (
             <View
@@ -238,16 +266,18 @@ export default function FocusScreen() {
           <View style={{ flexDirection: 'row', gap: spacing.sm }}>
             <Pressable
               onPress={onSplit}
+              disabled={splitting}
               style={{
                 flex: 1,
                 borderRadius: radii.pill,
                 paddingVertical: spacing.sm,
                 alignItems: 'center',
                 backgroundColor: colors.paperDeep,
+                opacity: splitting ? 0.6 : 1,
               }}
             >
               <Text style={{ ...type.small, color: colors.inkSoft }}>
-                too heavy? split it
+                {splitting ? 'splitting…' : 'too heavy? split it'}
               </Text>
             </Pressable>
             <Pressable

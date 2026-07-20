@@ -1,0 +1,894 @@
+<title>Alongside — screen preview</title>
+<style>
+  :root {
+    --paper: #F4EFF7;
+    --paper-deep: #EDE5F2;
+    --paper-deeper: #E4DAEC;
+    --ink: #2E2540;
+    --ink-soft: #5B4E75;
+    --ink-muted: #8A80A0;
+    --lilac: #9B87C4;
+    --lilac-deep: #7D6BA8;
+    --lilac-soft: #C9BBE0;
+    --apricot: #F5B58A;
+    --apricot-soft: #FADFC7;
+    --divider: #E4DAEC;
+
+    --page-bg: #FBF8FD;
+    --page-fg: #2E2540;
+    --page-muted: #6B5F84;
+    --frame: #1A1226;
+    --frame-shadow: rgba(45, 25, 80, 0.18);
+
+    --serif: 'Fraunces', 'Cormorant Garamond', 'Georgia', 'Iowan Old Style', serif;
+    --sans: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --page-bg: #17111F;
+      --page-fg: #E9E1F0;
+      --page-muted: #9E92B4;
+      --frame: #0C0714;
+      --frame-shadow: rgba(0, 0, 0, 0.5);
+    }
+  }
+  :root[data-theme='dark'] {
+    --page-bg: #17111F;
+    --page-fg: #E9E1F0;
+    --page-muted: #9E92B4;
+    --frame: #0C0714;
+    --frame-shadow: rgba(0, 0, 0, 0.5);
+  }
+  :root[data-theme='light'] {
+    --page-bg: #FBF8FD;
+    --page-fg: #2E2540;
+    --page-muted: #6B5F84;
+    --frame: #1A1226;
+    --frame-shadow: rgba(45, 25, 80, 0.18);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--page-bg);
+    color: var(--page-fg);
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  .page {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 40px 32px 96px;
+  }
+
+  header.hero {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid rgba(155, 135, 196, 0.25);
+    margin-bottom: 40px;
+    flex-wrap: wrap;
+  }
+  header.hero h1 {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: clamp(28px, 4vw, 44px);
+    margin: 0;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+  header.hero p {
+    color: var(--page-muted);
+    margin: 8px 0 0;
+    max-width: 62ch;
+    line-height: 1.55;
+  }
+  header.hero .meta {
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--page-muted);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  header.hero .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--lilac);
+    box-shadow: 0 0 12px rgba(155, 135, 196, 0.6);
+  }
+
+  .contact-sheet {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 40px 32px;
+    align-items: start;
+  }
+
+  .frame-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+  .frame-label {
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--page-muted);
+    font-weight: 500;
+  }
+  .frame-label strong {
+    color: var(--page-fg);
+    font-weight: 600;
+    letter-spacing: 0.14em;
+  }
+
+  /* iPhone-ish frame */
+  .device {
+    width: 300px;
+    height: 620px;
+    background: var(--frame);
+    border-radius: 42px;
+    padding: 10px;
+    box-shadow:
+      0 30px 60px -20px var(--frame-shadow),
+      0 0 0 1px rgba(255,255,255,0.04) inset;
+    position: relative;
+  }
+  .device::before {
+    content: '';
+    position: absolute;
+    top: 18px; left: 50%;
+    transform: translateX(-50%);
+    width: 92px; height: 26px;
+    background: var(--frame);
+    border-radius: 14px;
+    z-index: 10;
+  }
+  .screen {
+    width: 100%;
+    height: 100%;
+    background: var(--paper);
+    color: var(--ink);
+    border-radius: 32px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+  .status-bar {
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 22px 0 24px;
+    font-size: 11px;
+    color: var(--ink-soft);
+    font-weight: 600;
+  }
+  .status-bar .right {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+  }
+  .status-bar .bar {
+    width: 3px; height: 8px;
+    background: var(--ink-soft);
+    border-radius: 1px;
+  }
+
+  .content {
+    flex: 1;
+    padding: 8px 20px 20px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .eyebrow {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--ink-muted);
+  }
+  .eyebrow a { color: var(--ink-muted); text-decoration: none; }
+
+  h2.hero-title {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 24px;
+    line-height: 1.15;
+    margin: 0;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+
+  .input {
+    background: #fff;
+    border-radius: 16px;
+    padding: 14px;
+    font-size: 14px;
+    line-height: 1.4;
+    color: var(--ink-muted);
+    min-height: 56px;
+  }
+
+  .btn-primary {
+    background: var(--lilac-deep);
+    color: #fff;
+    border: none;
+    border-radius: 999px;
+    padding: 14px;
+    font-family: var(--sans);
+    font-size: 14px;
+    cursor: pointer;
+    text-align: center;
+    width: 100%;
+  }
+  .btn-primary.soft { background: var(--lilac-soft); color: #fff; }
+  .btn-ghost {
+    background: var(--paper-deep);
+    color: var(--ink-soft);
+    border: none;
+    border-radius: 999px;
+    padding: 10px 14px;
+    font-family: var(--sans);
+    font-size: 13px;
+    cursor: pointer;
+    flex: 1;
+  }
+
+  /* Focus card (home) */
+  .focus-card {
+    background: var(--lilac);
+    color: #fff;
+    border-radius: 24px;
+    padding: 18px 18px 20px;
+    box-shadow: 0 12px 24px -12px rgba(125, 107, 168, 0.5);
+  }
+  .focus-card .companion-slot {
+    height: 92px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 8px;
+  }
+  .focus-card h3 {
+    margin: 0;
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 18px;
+    line-height: 1.25;
+  }
+  .focus-card small { display: block; font-size: 12px; opacity: 0.85; margin-top: 4px; }
+
+  /* task rows */
+  .row {
+    background: var(--paper-deep);
+    border-radius: 14px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .row-title { font-size: 14px; color: var(--ink); }
+  .row-sub { font-size: 11px; color: var(--ink-muted); }
+  .section-label {
+    font-size: 11px;
+    color: var(--ink-muted);
+    margin-top: 2px;
+  }
+
+  .divider-list {
+    border-top: 1px solid var(--divider);
+    padding-top: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .divider-list .row-toggle {
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+    color: var(--ink-soft);
+  }
+  .divider-list .row-toggle .val { color: var(--ink-muted); font-size: 12px; }
+
+  /* focus screen internals */
+  .progress-track {
+    height: 6px;
+    background: var(--paper-deep);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--lilac);
+    border-radius: 3px;
+    transition: width 320ms ease;
+  }
+  .progress-text {
+    font-size: 11px;
+    color: var(--ink-muted);
+    text-align: right;
+    margin-top: 4px;
+  }
+
+  .step-card {
+    background: #fff;
+    border-radius: 24px;
+    padding: 20px 22px 24px;
+    box-shadow: 0 12px 24px -14px rgba(125, 107, 168, 0.35);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 148px;
+  }
+  .step-card .next-label { font-size: 12px; color: var(--ink-muted); }
+  .step-card .next-text {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 19px;
+    line-height: 1.25;
+    color: var(--ink);
+    text-wrap: balance;
+  }
+  .dots { display: flex; gap: 8px; margin-top: auto; }
+  .dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--paper-deeper);
+  }
+  .dot.done { background: var(--lilac-deep); }
+  .dot.current { border: 2px solid var(--lilac); background: var(--paper-deeper); }
+  .dot.skipped { background: var(--lilac-soft); }
+
+  .checkin {
+    background: var(--paper-deep);
+    border-radius: 14px;
+    padding: 12px;
+    font-size: 12px;
+    color: var(--ink-soft);
+    text-align: center;
+  }
+
+  /* Rhythms */
+  .rhythm-card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 12px 14px;
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    align-items: center;
+  }
+  .rhythm-card .title { font-size: 14px; color: var(--ink); }
+  .rhythm-card .cue { font-size: 11px; color: var(--ink-muted); margin-top: 2px; }
+  .rhythm-btn {
+    background: var(--lilac-deep);
+    color: #fff;
+    border: none;
+    border-radius: 999px;
+    padding: 8px 14px;
+    font-size: 12px;
+    font-family: var(--sans);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .rhythm-btn.done { background: var(--lilac-soft); }
+
+  .felt-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+    align-items: center;
+  }
+  .felt-row .q { font-size: 12px; color: var(--ink-soft); flex: 1; }
+  .felt-chip {
+    background: var(--paper-deep);
+    color: var(--ink-soft);
+    border: none;
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-family: var(--sans);
+    cursor: pointer;
+  }
+
+  /* Settings quiet-hours chips */
+  .chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .chip {
+    background: var(--paper-deep);
+    color: var(--ink-soft);
+    border-radius: 999px;
+    padding: 6px 12px;
+    font-size: 12px;
+    cursor: pointer;
+    border: none;
+    font-family: var(--sans);
+  }
+  .chip.on { background: var(--lilac-deep); color: #fff; }
+
+  /* Companion (SVG matches app/src/components/Companion.tsx) */
+  .companion {
+    display: inline-block;
+    position: relative;
+  }
+  .companion.breathe { animation: breathe 3.6s ease-in-out infinite; }
+  .companion.jump { animation: jump 900ms cubic-bezier(.22,1,.36,1); }
+  @keyframes breathe {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.03); }
+  }
+  @keyframes jump {
+    0%   { transform: translateY(0); }
+    30%  { transform: translateY(-26px); }
+    55%  { transform: translateY(0); }
+    75%  { transform: translateY(-10px); }
+    100% { transform: translateY(0); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .companion.breathe, .companion.jump { animation: none; }
+  }
+
+  /* Confetti */
+  .confetti-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  .confetti-piece {
+    position: absolute;
+    width: 8px; height: 12px;
+    border-radius: 2px;
+    top: 50%; left: 50%;
+    opacity: 0;
+  }
+  .confetti-piece.play {
+    animation: confetti 1.6s ease-out forwards;
+  }
+  @keyframes confetti {
+    0% { transform: translate(0,0) rotate(0deg); opacity: 1; }
+    50% { opacity: 1; }
+    100% {
+      transform: translate(var(--dx), var(--dy)) rotate(var(--rot));
+      opacity: 0;
+    }
+  }
+
+  .toast {
+    position: absolute;
+    left: 50%; bottom: 20px;
+    transform: translateX(-50%);
+    background: rgba(45, 37, 64, 0.92);
+    color: #fff;
+    padding: 8px 14px;
+    border-radius: 999px;
+    font-size: 12px;
+    opacity: 0;
+    transition: opacity 240ms ease;
+  }
+  .toast.show { opacity: 1; }
+
+  /* Theme toggle */
+  .theme-toggle {
+    background: transparent;
+    color: var(--page-muted);
+    border: 1px solid rgba(155, 135, 196, 0.3);
+    border-radius: 999px;
+    padding: 8px 14px;
+    font-family: var(--sans);
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .theme-toggle:hover { color: var(--page-fg); }
+
+  .legend {
+    margin-top: 40px;
+    padding: 20px;
+    background: rgba(155, 135, 196, 0.06);
+    border: 1px solid rgba(155, 135, 196, 0.18);
+    border-radius: 16px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    font-size: 13px;
+    color: var(--page-muted);
+    line-height: 1.55;
+  }
+  .legend strong { color: var(--page-fg); font-weight: 600; display: block; margin-bottom: 4px; }
+
+  a.repo-link { color: var(--page-fg); text-decoration: underline; text-decoration-color: rgba(155, 135, 196, 0.5); text-underline-offset: 3px; }
+</style>
+
+<div class="page">
+  <header class="hero">
+    <div>
+      <div class="meta"><span class="dot"></span> alongside · screen preview</div>
+      <h1>Every screen, one spread — so a change is visible, not just described.</h1>
+      <p>Web mockups of the current Expo app, drawn from the same palette, spacing tokens, and copy as the code in <code>app/</code>. Tap <em>done · next</em> on the Focus mockup to fire real confetti.</p>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()">toggle theme</button>
+  </header>
+
+  <div class="contact-sheet">
+
+    <!-- 1. Home — empty -->
+    <div class="frame-wrap">
+      <div class="frame-label"><strong>home</strong> · first launch</div>
+      <div class="device"><div class="screen">
+        <div class="status-bar"><span>9:41</span><span class="right"><span class="bar"></span><span class="bar" style="height:6px"></span></span></div>
+        <div class="content">
+          <div class="eyebrow"><span>alongside</span><a>settings</a></div>
+          <h2 class="hero-title">what shall we do together?</h2>
+          <div class="input">pack for the trip · answer that email · tidy the kitchen</div>
+          <button class="btn-primary soft">let's begin</button>
+          <div class="divider-list" style="margin-top:auto">
+            <div class="row-toggle"><span>rhythms</span><span class="val">set gentle routines</span></div>
+            <div class="row-toggle"><span>later</span><span class="val">nothing scheduled</span></div>
+          </div>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- 2. Home — focused + parked -->
+    <div class="frame-wrap">
+      <div class="frame-label"><strong>home</strong> · focus + parking lot</div>
+      <div class="device"><div class="screen">
+        <div class="status-bar"><span>9:41</span><span class="right"><span class="bar"></span><span class="bar" style="height:6px"></span></span></div>
+        <div class="content" style="gap:10px">
+          <div class="eyebrow"><span>alongside</span><a>settings</a></div>
+          <h2 class="hero-title">what you're on</h2>
+          <div class="focus-card">
+            <div class="companion-slot">
+              <div id="companion-home" class="companion breathe"></div>
+            </div>
+            <h3>pack for the weekend trip</h3>
+            <small>2 of 6 done · tap to continue</small>
+          </div>
+          <div class="section-label">waiting for you</div>
+          <div class="row"><span class="row-title">reply to the venue</span><span class="row-sub">0 of 4 done</span></div>
+          <div class="row"><span class="row-title">book dentist appointment</span><span class="row-sub">1 of 3 done</span></div>
+          <div class="divider-list" style="margin-top:auto">
+            <div class="row-toggle"><span>rhythms</span><span class="val">3</span></div>
+            <div class="row-toggle"><span>later</span><span class="val">2</span></div>
+          </div>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- 3. Focus mode -->
+    <div class="frame-wrap">
+      <div class="frame-label"><strong>focus</strong> · tap "done · next" to test celebration</div>
+      <div class="device"><div class="screen" id="focus-screen">
+        <div class="status-bar"><span>9:41</span><span class="right"><span class="bar"></span><span class="bar" style="height:6px"></span></span></div>
+        <div class="content" style="gap:12px">
+          <div class="eyebrow"><a onclick="return false">← back to tasks</a><span id="phase-label" style="font-size:11px">phase 1 of 2</span></div>
+          <div class="progress-track"><div class="progress-fill" id="progress" style="width:33%"></div></div>
+          <div class="progress-text" id="progress-text">2 of 6 done</div>
+          <div style="display:flex;justify-content:center;margin-top:8px">
+            <div id="companion-focus" class="companion breathe"></div>
+          </div>
+          <div class="step-card">
+            <div class="next-label">next</div>
+            <div class="next-text" id="step-text">put the empty suitcase on the bed</div>
+            <div class="dots" id="dots"></div>
+          </div>
+          <button class="btn-primary" onclick="advanceStep()">done ·  next</button>
+          <div style="display:flex;gap:8px">
+            <button class="btn-ghost">too heavy? split it</button>
+            <button class="btn-ghost">skip</button>
+          </div>
+        </div>
+        <div class="confetti-layer" id="confetti"></div>
+        <div class="toast" id="toast">nice</div>
+      </div></div>
+    </div>
+
+    <!-- 4. Focus mode — check-in state -->
+    <div class="frame-wrap">
+      <div class="frame-label"><strong>focus</strong> · 10-min gentle check-in</div>
+      <div class="device"><div class="screen">
+        <div class="status-bar"><span>9:51</span><span class="right"><span class="bar"></span><span class="bar" style="height:6px"></span></span></div>
+        <div class="content" style="gap:12px">
+          <div class="eyebrow"><a onclick="return false">← back to tasks</a><span style="font-size:11px">phase 1 of 2</span></div>
+          <div class="progress-track"><div class="progress-fill" style="width:33%"></div></div>
+          <div class="progress-text">2 of 6 done</div>
+          <div style="display:flex;justify-content:center;margin-top:8px">
+            <div id="companion-checkin" class="companion breathe"></div>
+          </div>
+          <div class="step-card">
+            <div class="next-label">next</div>
+            <div class="next-text">fold two t-shirts</div>
+            <div class="dots">
+              <span class="dot done"></span>
+              <span class="dot done"></span>
+              <span class="dot current"></span>
+              <span class="dot"></span>
+            </div>
+          </div>
+          <div class="checkin">still here whenever you're ready — want to pick this back up?</div>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- 5. Rhythms -->
+    <div class="frame-wrap">
+      <div class="frame-label"><strong>rhythms</strong> · cue-anchored, no streaks</div>
+      <div class="device"><div class="screen">
+        <div class="status-bar"><span>9:41</span><span class="right"><span class="bar"></span><span class="bar" style="height:6px"></span></span></div>
+        <div class="content" style="gap:10px">
+          <div class="eyebrow"><a>← back</a><span></span></div>
+          <h2 class="hero-title">rhythms</h2>
+          <div style="font-size:12px;color:var(--ink-muted);line-height:1.5">gentle routines anchored to something you already do. no streaks, no counts.</div>
+          <div style="display:flex;justify-content:center;margin:8px 0">
+            <div id="companion-rhythms" class="companion breathe"></div>
+          </div>
+          <div class="rhythm-card">
+            <div><div class="title">take meds</div><div class="cue">after my morning coffee</div></div>
+            <button class="rhythm-btn done">today · done</button>
+          </div>
+          <div class="rhythm-card" style="flex-direction:column;align-items:stretch">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div><div class="title">10-min tidy</div><div class="cue">after dinner</div></div>
+              <button class="rhythm-btn">mark done</button>
+            </div>
+            <div class="felt-row">
+              <span class="q">how did that feel?</span>
+              <button class="felt-chip">easy</button>
+              <button class="felt-chip">okay</button>
+              <button class="felt-chip">hard</button>
+            </div>
+          </div>
+          <div class="rhythm-card">
+            <div><div class="title">walk</div><div class="cue">after school pickup</div></div>
+            <button class="rhythm-btn">mark done</button>
+          </div>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- 6. New later (backlog) -->
+    <div class="frame-wrap">
+      <div class="frame-label"><strong>later</strong> · save something for a future date</div>
+      <div class="device"><div class="screen">
+        <div class="status-bar"><span>9:41</span><span class="right"><span class="bar"></span><span class="bar" style="height:6px"></span></span></div>
+        <div class="content" style="gap:12px">
+          <div class="eyebrow"><a>← back</a><span></span></div>
+          <h2 class="hero-title">save something for later</h2>
+          <div style="font-size:12px;color:var(--ink-muted)">this stays tucked away until the day.</div>
+          <div class="input" style="color:var(--ink-muted)">book the vet check-up</div>
+          <div style="background:var(--paper-deep);border-radius:14px;padding:12px 14px">
+            <div style="font-size:11px;color:var(--ink-muted)">for</div>
+            <div style="font-size:14px;color:var(--ink);margin-top:2px">2026-07-24</div>
+          </div>
+          <button class="btn-primary">save for later</button>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- 7. Settings -->
+    <div class="frame-wrap">
+      <div class="frame-label"><strong>settings</strong> · quiet hours</div>
+      <div class="device"><div class="screen">
+        <div class="status-bar"><span>9:41</span><span class="right"><span class="bar"></span><span class="bar" style="height:6px"></span></span></div>
+        <div class="content" style="gap:12px">
+          <div class="eyebrow"><a>← back</a><span></span></div>
+          <h2 class="hero-title">settings</h2>
+          <div style="margin-top:12px">
+            <div style="font-size:14px;color:var(--ink)">quiet hours</div>
+            <div style="font-size:12px;color:var(--ink-muted);margin-top:4px">no gentle nudges during this window.</div>
+            <div style="font-size:12px;color:var(--ink-muted);margin-top:14px">starts at</div>
+            <div class="chip-row">
+              <button class="chip">20:00</button>
+              <button class="chip">21:00</button>
+              <button class="chip on">22:00</button>
+              <button class="chip">23:00</button>
+              <button class="chip">00:00</button>
+            </div>
+            <div style="font-size:12px;color:var(--ink-muted);margin-top:14px">until</div>
+            <div class="chip-row">
+              <button class="chip">06:00</button>
+              <button class="chip">07:00</button>
+              <button class="chip on">08:00</button>
+              <button class="chip">09:00</button>
+              <button class="chip">10:00</button>
+            </div>
+          </div>
+          <div style="font-size:12px;color:var(--ink-muted);margin-top:auto;line-height:1.5">
+            alongside is an early prototype. it is not medical advice, a diagnosis, or a treatment for adhd.
+          </div>
+        </div>
+      </div></div>
+    </div>
+
+  </div>
+
+  <div class="legend">
+    <div><strong>How this works</strong>The preview is regenerated from the current Expo screens in <code>app/</code>. When code changes, this artifact is republished at the same URL so you can compare in place.</div>
+    <div><strong>What's real</strong>Colors, spacing, typography, copy, and the confetti/companion behavior come from the same source tokens as the app.</div>
+    <div><strong>What's a mock</strong>Layout only — there's no local storage, no worker calls, no notifications. To test those end-to-end, run <code>npm run app</code> and open in Expo Go.</div>
+  </div>
+</div>
+
+<script>
+  const CELEB = ['#9B87C4','#7D6BA8','#F5B58A','#FADFC7','#C9BBE0'];
+  const SKIN = '#EBBFA0';
+  const HAIR = '#6B4A2E';
+  const SHIRT = '#9B87C4';
+  const SHIRT_SHADE = '#7D6BA8';
+  const INK = '#2E2540';
+
+  // Warm brown-haired companion. Arms are separate <g> elements that rotate
+  // around the shoulder point (via transform) so celebrating raises them to a V.
+  const COMPANION_SVG = (mood /* 'idle' | 'celebrating' */) => {
+    const celebrating = mood === 'celebrating';
+    const armLeftRot  = celebrating ? -150 : -20;
+    const armRightRot = celebrating ?  150 :  20;
+    const eyes = celebrating
+      ? `<path d="M69 58 Q73 54 77 58" stroke="${INK}" stroke-width="2" stroke-linecap="round" fill="none"/>
+         <path d="M83 58 Q87 54 91 58" stroke="${INK}" stroke-width="2" stroke-linecap="round" fill="none"/>`
+      : `<circle cx="72" cy="58" r="2.4" fill="${INK}"/>
+         <circle cx="88" cy="58" r="2.4" fill="${INK}"/>`;
+    const mouth = celebrating
+      ? `<path d="M72 70 Q80 80 88 70 Q80 74 72 70 Z" fill="${INK}" opacity="0.85"/>`
+      : `<path d="M74 70 Q80 74 86 70" stroke="${INK}" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.85"/>`;
+    // arms — rotated around their shoulder anchor
+    const arm = (shoulderX, shoulderY, rot, mirror) => {
+      const d1 = mirror
+        ? `M0 0 Q12 4 14 18`
+        : `M0 0 Q-12 4 -14 18`;
+      const d2 = mirror
+        ? `M8 16 Q14 30 14 42`
+        : `M-8 16 Q-14 30 -14 42`;
+      const handX = mirror ? 14 : -14;
+      return `<g transform="translate(${shoulderX} ${shoulderY}) rotate(${rot})">
+        <path d="${d1}" stroke="${SHIRT_SHADE}" stroke-width="12" stroke-linecap="round" fill="none"/>
+        <path d="${d2}" stroke="${SKIN}" stroke-width="8" stroke-linecap="round" fill="none"/>
+        <circle cx="${handX}" cy="44" r="5" fill="${SKIN}"/>
+      </g>`;
+    };
+    return `
+    <svg width="120" height="120" viewBox="0 0 160 160">
+      <ellipse cx="80" cy="148" rx="38" ry="4" fill="#C9BBE0" opacity="0.45"/>
+      <!-- torso -->
+      <path d="M50 100 Q50 88 62 86 L98 86 Q110 88 110 100 L112 140 Q112 148 104 148 L56 148 Q48 148 48 140 Z" fill="${SHIRT}"/>
+      <path d="M80 86 L80 148" stroke="${SHIRT_SHADE}" stroke-width="1" opacity="0.18"/>
+      <!-- neck -->
+      <path d="M74 82 L86 82 L86 92 L74 92 Z" fill="${SKIN}"/>
+      <!-- hair back -->
+      <path d="M52 58 Q52 34 80 32 Q108 34 108 58 L110 92 Q104 90 100 92 L100 74 Q80 82 60 74 L60 92 Q56 90 50 92 Z" fill="${HAIR}"/>
+      <!-- face -->
+      <circle cx="80" cy="60" r="22" fill="${SKIN}"/>
+      <!-- hair fringe -->
+      <path d="M58 54 Q68 40 82 42 Q98 42 104 56 Q98 50 88 52 Q78 56 66 60 Q60 60 58 54 Z" fill="${HAIR}"/>
+      <!-- cheeks -->
+      <circle cx="70" cy="66" r="3.5" fill="#F2A088" opacity="0.55"/>
+      <circle cx="90" cy="66" r="3.5" fill="#F2A088" opacity="0.55"/>
+      ${eyes}
+      ${mouth}
+      ${arm(58, 94, armLeftRot, false)}
+      ${arm(102, 94, armRightRot, true)}
+    </svg>`;
+  };
+
+  // Populate companions
+  const sizes = { 'companion-home': 90, 'companion-focus': 150, 'companion-checkin': 150, 'companion-rhythms': 100 };
+  Object.entries(sizes).forEach(([id, size]) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.innerHTML = COMPANION_SVG('idle');
+    const svg = el.querySelector('svg');
+    if (svg) { svg.setAttribute('width', size); svg.setAttribute('height', size); }
+  });
+
+  // Focus interactive: 6 steps with a phase break at 5
+  const STEPS = [
+    { text: 'put the empty suitcase on the bed', status: 'done' },
+    { text: 'grab your toiletry bag from the shelf', status: 'done' },
+    { text: 'fold two t-shirts', status: 'pending' },
+    { text: 'add socks and underwear', status: 'pending' },
+    { text: 'tuck in your charger', status: 'pending' },
+    { text: 'zip it closed and set by the door', status: 'pending' },
+  ];
+  const PHASE = 4;
+
+  function renderFocus() {
+    const total = STEPS.length;
+    const done = STEPS.filter(s => s.status !== 'pending').length;
+    const currentIdx = STEPS.findIndex(s => s.status === 'pending');
+    const anchor = currentIdx < 0 ? total - 1 : currentIdx;
+    const phase = Math.floor(anchor / PHASE);
+    const phaseCount = Math.max(1, Math.ceil(total / PHASE));
+    const phaseSteps = STEPS.slice(phase * PHASE, (phase + 1) * PHASE);
+
+    document.getElementById('progress').style.width = `${(done/total)*100}%`;
+    document.getElementById('progress-text').textContent = `${done} of ${total} done`;
+    document.getElementById('phase-label').textContent = phaseCount > 1 ? `phase ${phase + 1} of ${phaseCount}` : '';
+    document.getElementById('step-text').textContent =
+      currentIdx < 0 ? 'all done — beautifully.' : STEPS[currentIdx].text;
+
+    const dotsHost = document.getElementById('dots');
+    dotsHost.innerHTML = '';
+    phaseSteps.forEach((s, i) => {
+      const el = document.createElement('span');
+      const globalIdx = phase * PHASE + i;
+      el.className = 'dot' + (s.status === 'done' ? ' done'
+        : s.status === 'skipped' ? ' skipped'
+        : globalIdx === currentIdx ? ' current' : '');
+      dotsHost.appendChild(el);
+    });
+  }
+  renderFocus();
+
+  function advanceStep() {
+    const idx = STEPS.findIndex(s => s.status === 'pending');
+    if (idx < 0) {
+      // reset the demo
+      STEPS.forEach(s => (s.status = 'pending'));
+      STEPS[0].status = 'done';
+      STEPS[1].status = 'done';
+      renderFocus();
+      swapCompanion('companion-focus', 'idle');
+      return;
+    }
+    STEPS[idx].status = 'done';
+    renderFocus();
+    swapCompanion('companion-focus', 'celebrating');
+    fireConfetti(STEPS.every(s => s.status !== 'pending'));
+    const toast = document.getElementById('toast');
+    toast.textContent = STEPS.every(s => s.status !== 'pending') ? 'all done — beautifully' : 'nice';
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 1400);
+    setTimeout(() => swapCompanion('companion-focus', 'idle'), 1400);
+  }
+
+  function swapCompanion(id, mood) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.innerHTML = COMPANION_SVG(mood);
+    const svg = el.querySelector('svg');
+    const size = { 'companion-focus': 150, 'companion-home': 90, 'companion-rhythms': 100 }[id] ?? 120;
+    if (svg) { svg.setAttribute('width', size); svg.setAttribute('height', size); }
+    if (mood === 'celebrating') {
+      el.classList.remove('jump');
+      void el.offsetWidth; // restart animation
+      el.classList.add('jump');
+      setTimeout(() => el.classList.remove('jump'), 950);
+    }
+  }
+
+  function fireConfetti(big) {
+    const host = document.getElementById('confetti');
+    const count = big ? 40 : 22;
+    for (let i = 0; i < count; i++) {
+      const p = document.createElement('span');
+      p.className = 'confetti-piece';
+      p.style.background = CELEB[i % CELEB.length];
+      const angle = (Math.random() * Math.PI) - Math.PI / 2;
+      const dist = 120 + Math.random() * 100;
+      p.style.setProperty('--dx', `${Math.cos(angle) * dist}px`);
+      p.style.setProperty('--dy', `${Math.sin(angle) * dist - 60}px`);
+      p.style.setProperty('--rot', `${(Math.random() * 720) - 360}deg`);
+      host.appendChild(p);
+      requestAnimationFrame(() => p.classList.add('play'));
+      setTimeout(() => p.remove(), 1700);
+    }
+  }
+
+  function toggleTheme() {
+    const root = document.documentElement;
+    const cur = root.getAttribute('data-theme');
+    const dark = cur === 'dark' || (!cur && matchMedia('(prefers-color-scheme: dark)').matches);
+    root.setAttribute('data-theme', dark ? 'light' : 'dark');
+  }
+</script>
